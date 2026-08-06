@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bảng Tuần Hoàn Hóa Học Tương Tác</title>
+    <style>
+        /* CSS RESET & VARIABLES */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        :root {
+            --bg-primary: #0f172a;
+            --bg-secondary: #1e293b;
+            --bg-card: #334155;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            
+            /* Phân loại màu nguyên tố */
+            --color-nonmetal: #f97316;
+            --color-noble-gas: #a855f7;
+            --color-alkali: #eab308;
+            --color-alkaline-earth: #facc15;
+            --color-metalloid: #10b981;
+            --color-halogen: #06b6d4;
+            --color-post-transition: #3b82f6;
+            
+            --success: #22c55e;
+            --border-radius: 8px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            line-height: 1.5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        /* DASHBOARD HEADER & STATS */
+        header {
+            margin-bottom: 25px;
+            border-bottom: 1px solid var(--bg-card);
+            padding-bottom: 20px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            margin-bottom: 5px;
+            color: var(--text-main);
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 15px;
+        }
+
+        .dashboard-stats {
+            background-color: var(--bg-secondary);
+            padding: 15px 20px;
+            border-radius: var(--border-radius);
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .progress-box {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            flex-grow: 1;
+            max-width: 600px;
+        }
+
+        .progress-label {
+            font-size: 0.85rem;
+            white-space: nowrap;
+            color: var(--text-muted);
+        }
+
+        .progress-bar-container {
+            background-color: var(--bg-card);
+            border-radius: 10px;
+            height: 10px;
+            width: 100%;
+            overflow: hidden;
+        }
+
+        .progress-bar {
+            height: 100%;
+            width: 0%;
+            background-color: var(--success);
+            transition: width 0.4s ease;
+        }
+
+        .legend {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .legend-color {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        /* GRID SYSTEM FOR PERIODIC TABLE */
+        .table-wrapper {
+            overflow-x: auto;
+            margin-top: 20px;
+            padding-bottom: 10px;
+        }
+
+        .periodic-table {
+            display: grid;
+            grid-template-columns: repeat(18, minmax(65px, 1fr));
+            gap: 6px;
+            min-width: 1200px; /* Đảm bảo cấu trúc không bị bóp méo trên màn hình nhỏ */
+        }
+
+        /* ELEMENT CARD */
+        .element-card {
+            background-color: var(--bg-secondary);
+            border: 2px solid transparent;
+            border-radius: var(--border-radius);
+            padding: 8px;
+            aspect-ratio: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            cursor: pointer;
+            transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+            user-select: none;
+        }
+
+        .element-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            font-size: 0.75rem;
+            color: var(--text-muted);
+        }
+
+        .atomic-number {
+            font-weight: bold;
+        }
+
+        .check-badge {
+            display: none;
+            color: var(--success);
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+
+        .element-card.reviewed .check-badge {
+            display: block;
+        }
+
+        .element-card.reviewed {
+            border-color: var(--success);
+            box-shadow: inset 0 0 5px rgba(34, 197, 94, 0.2);
+        }
+
+        .symbol {
+            font-size: 1.4rem;
+            font-weight: 800;
+            text-align: center;
+            margin: 2px 0;
+        }
+
+        .element-name {
+            font-size: 0.7rem;
+            text-align: center;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            color: var(--text-muted);
+        }
+
+        /* MODAL WINDOW */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(15, 23, 42, 0.85);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            z-index: 100;
+            padding: 15px;
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .modal-content {
+            background-color: var(--bg-secondary);
+            border-radius: 12px;
+            width: 100%;
+            max-width: 650px;
+            padding: 25px;
+            position: relative;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5);
+            transform: scale(0.95);
+            transition: transform 0.3s ease;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .close-btn {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 5px;
+            line-height: 1;
+        }
+
+        .close-btn:hover {
+            color: var(--text-main);
+        }
+
+        .modal-grid {
+            display: grid;
+            grid-template-columns: 1.2fr 0.8fr;
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        @media (max-width: 580px) {
+            .modal-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* INFO STYLES */
+        .info-title-group {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            margin-bottom: 15px;
+        }
+
+        .info-symbol-badge {
+            font-size: 2.2rem;
+            font-weight: 800;
+            width: 65px;
+            height: 65px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: var(--border-radius);
+            color: #fff;
+        }
+
+        .info-names h2 {
+            font-size: 1.4rem;
+            line-height: 1.2;
+        }
+
+        .info-names p {
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .info-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+
+        .info-table td {
+            padding: 8px 0;
+            font-size: 0.9rem;
+            border-bottom: 1px solid var(--bg-card);
+        }
+
+        .info-table td:first-child {
+            color: var(--text-muted);
+            width: 45%;
+        }
+
+        .info-table td:last-child {
+            font-weight: 500;
+        }
+
+        .app-text {
+            font-size: 0.85rem;
+            background-color: var(--bg-card);
+            padding: 10px;
+            border-radius: 6px;
+            border-left: 3px solid var(--text-muted);
+            margin-bottom: 20px;
+        }
+
+        /* ELECTRON DIAGRAM (DYNAMIC SVG) */
+        .diagram-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background-color: var(--bg-primary);
+            border-radius: var(--border-radius);
+            padding: 15px;
+            border: 1px solid var(--bg-card);
+        }
+
+        .diagram-title {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        /* ROTATION KEYFRAMES FOR ELECTRON SHELLS */
+        @keyframes rotate-cw {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        @keyframes rotate-ccw {
+            from { transform: rotate(360deg); }
+            to { transform: rotate(0deg); }
+        }
+
+        .shell-layer {
+            transform-origin: 120px 120px;
+        }
+
+        .rotate-cw {
+            animation: rotate-cw 12s linear infinite;
+        }
+
+        .rotate-ccw {
+            animation: rotate-ccw 16s linear infinite;
+        }
+
+        /* FOOTER & BUTTONS */
+        .modal-actions {
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            margin-top: 20px;
+            border-top: 1px solid var(--bg-card);
+            padding-top: 15px;
+        }
+
+        .btn {
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            cursor: pointer;
+            border: none;
+            transition: opacity 0.2s;
+        }
+
+        .btn:hover {
+            opacity: 0.9;
+        }
+
+        .btn-secondary {
+            background-color: var(--bg-card);
+            color: var(--text-main);
+        }
+
+        .btn-success {
+            background-color: var(--success);
+            color: white;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <h1>Bảng Tuần Hoàn Hóa Học Tương Tác</h1>
+        <p class="subtitle">Ứng dụng tự học và ôn tập kiến thức hóa học offline tại nhà dành cho học sinh THPT</p>
+        
+        <div class="dashboard-stats">
+            <div class="progress-box">
+                <span class="progress-label" id="progress-text">Tiến độ: 0/18 nguyên tố đã học (0%)</span>
+                <div class="progress-bar-container">
+                    <div class="progress-bar" id="progress-fill"></div>
+                </div>
+            </div>
+            
+            <div class="legend">
+                <div class="legend-item"><div class="legend-color" style="background: var(--color-nonmetal)"></div>Phi kim</div>
+                <div class="legend-item"><div class="legend-color" style="background: var(--color-noble-gas)"></div>Khí hiếm</div>
+                <div class="legend-item"><div class="legend-color" style="background: var(--color-alkali)"></div>Kim loại kiềm</div>
+                <div class="legend-item"><div class="legend-color" style="background: var(--color-alkaline-earth)"></div>Kim loại kiềm thổ</div>
+                <div class="legend-item"><div class="legend-color" style="background: var(--color-metalloid)"></div>Á kim</div>
+                <div class="legend-item"><div class="legend-color" style="background: var(--color-post-transition)"></div>Kim loại yếu</div>
+                <div class="legend-item"><div class="legend-color" style="background: var(--color-halogen)"></div>Halogen</div>
+            </div>
+        </div>
+    </header>
+
+    <main class="table-wrapper">
+        <div class="periodic-table" id="periodic-grid">
+            <!-- JavaScript tự động hiển thị các ô nguyên tố ở đây -->
+        </div>
+    </main>
+</div>
+
+<!-- THÔNG TIN CHI TIẾT (MODAL) -->
+<div class="modal-overlay" id="modal">
+    <div class="modal-content">
+        <button class="close-btn" onclick="closeModal()">&times;</button>
+        
+        <div class="info-title-group">
+            <div class="info-symbol-badge" id="modal-badge"></div>
+            <div class="info-names">
+                <h2 id="modal-name"></h2>
+                <p id="modal-category"></p>
+            </div>
+        </div>
+
+        <div class="modal-grid">
+            <!-- Cột trái: Thông số cơ bản & ứng dụng -->
+            <div>
+                <table class="info-table">
+                    <tr>
+                        <td>Số hiệu nguyên tử (Z)</td>
+                        <td id="modal-z"></td>
+                    </tr>
+                    <tr>
+                        <td>Nguyên tử khối</td>
+                        <td id="modal-mass"></td>
+                    </tr>
+                    <tr>
+                        <td>Cấu hình Electron</td>
+                        <td id="modal-config" style="font-family: monospace;"></td>
+                    </tr>
+                    <tr>
+                        <td>Hóa trị đặc trưng</td>
+                        <td id="modal-valency"></td>
+                    </tr>
+                </table>
+                <p style="font-size: 0.8rem; font-weight: bold; margin-bottom: 5px; color: var(--text-muted);">ỨNG DỤNG THỰC TẾ:</p>
+                <div class="app-text" id="modal-app"></div>
+            </div>
+
+            <!-- Cột phải: Sơ đồ electron động vẽ bằng SVG -->
+            <div class="diagram-container">
+                <div class="diagram-title">Sơ đồ Electron</div>
+                <div id="electron-svg-wrapper"></div>
+            </div>
+        </div>
+
+        <div class="modal-actions">
+            <button class="btn btn-secondary" onclick="closeModal()">Đóng</button>
+            <button class="btn btn-success" id="btn-toggle-review" onclick="handleToggleReview()"></button>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Dữ liệu mẫu 3 chu kỳ đầu (18 nguyên tố) theo sách GK mới (GDPT 2018)
+    const elementsData = [
+        { z: 1, symbol: "H", name: "Hydrogen (Hydro)", mass: 1.008, group: 1, period: 1, category: "nonmetal", config: "1s¹", valency: "I", shells: [1], app: "Sử dụng làm nhiên liệu vũ trụ sạch, sản xuất ammonia (NH₃) chất lượng cao và lọc hóa dầu." },
+        { z: 2, symbol: "He", name: "Helium (Heli)", mass: 4.0026, group: 18, period: 1, category: "noble-gas", config: "1s²", valency: "0", shells: [2], app: "Bơm khí cầu, làm mát các nam châm siêu dẫn trong thiết bị quét MRI y tế." },
+        { z: 3, symbol: "Li", name: "Lithium (Liti)", mass: 6.94, group: 1, period: 2, category: "alkali", config: "1s² 2s¹", valency: "I", shells: [2, 1], app: "Ứng dụng then chốt trong sản xuất pin sạc cho điện thoại, laptop, xe điện." },
+        { z: 4, symbol: "Be", name: "Beryllium (Beri)", mass: 9.0122, group: 2, period: 2, category: "alkaline-earth", config: "1s² 2s²", valency: "II", shells: [2, 2], app: "Chế tạo các hợp kim chịu lực cực bền dùng trong hàng không và cửa sổ thiết bị tia X." },
+        { z: 5, symbol: "B", name: "Boron (Bo)", mass: 10.81, group: 13, period: 2, category: "metalloid", config: "1s² 2s² 2p¹", valency: "III", shells: [2, 3], app: "Chất bán dẫn, dùng sản xuất thủy tinh chịu lực, gốm sứ kỹ thuật cao." },
+        { z: 6, symbol: "C", name: "Carbon (Cacbon)", mass: 12.011, group: 14, period: 2, category: "nonmetal", config: "1s² 2s² 2p²", valency: "IV, II", shells: [2, 4], app: "Cơ sở cấu tạo nên hợp chất hữu cơ và sự sống; dùng làm than hoạt tính lọc nước, lõi pin." },
+        { z: 7, symbol: "N", name: "Nitrogen (Nitơ)", mass: 14.007, group: 15, period: 2, category: "nonmetal", config: "1s² 2s² 2p³", valency: "III, V", shells: [2, 5], app: "Khí bảo quản thực phẩm, tạo môi trường trơ và sản xuất phân bón hóa học." },
+        { z: 8, symbol: "O", name: "Oxygen (Oxi)", mass: 15.999, group: 16, period: 2, category: "nonmetal", config: "1s² 2s² 2p⁴", valency: "II", shells: [2, 6], app: "Duy trì sự sống và quá trình cháy; dùng trong bình thở y tế, luyện kim." },
+        { z: 9, symbol: "F", name: "Fluorine (Flo)", mass: 18.998, group: 17, period: 2, category: "halogen", config: "1s² 2s² 2p⁵", valency: "I", shells: [2, 7], app: "Thành phần chống sâu răng trong kem đánh răng, sản xuất chất chống dính Teflon." },
+        { z: 10, symbol: "Ne", name: "Neon (Neon)", mass: 20.180, group: 18, period: 2, category: "noble-gas", config: "1s² 2s² 2p⁶", valency: "0", shells: [2, 8], app: "Nạp vào bóng đèn ống phóng điện phục vụ biển quảng cáo phát sáng màu cam đỏ." },
+        { z: 11, symbol: "Na", name: "Sodium (Natri)", mass: 22.990, group: 1, period: 3, category: "alkali", config: "[Ne] 3s¹", valency: "I", shells: [2, 8, 1], app: "Thành phần chính của muối ăn (NaCl), làm chất trao đổi nhiệt của lò phản ứng hạt nhân." },
+        { z: 12, symbol: "Mg", name: "Magnesium (Magie)", mass: 24.305, group: 2, period: 3, category: "alkaline-earth", config: "[Ne] 3s²", valency: "II", shells: [2, 8, 2], app: "Hợp kim duralumin chế tạo vỏ máy bay; dùng tạo chất bắt lửa sáng mạnh trong pháo hoa." },
+        { z: 13, symbol: "Al", name: "Aluminium (Nhôm)", mass: 26.982, group: 13, period: 3, category: "post-transition", config: "[Ne] 3s² 3p¹", valency: "III", shells: [2, 8, 3], app: "Chế tạo đồ gia dụng, dây dẫn điện, lá nhôm bao bì thực phẩm nhờ tính nhẹ, dẻo bền." },
+        { z: 14, symbol: "Si", name: "Silicon (Silic)", mass: 28.085, group: 14, period: 3, category: "metalloid", config: "[Ne] 3s² 3p²", valency: "IV", shells: [2, 8, 4], app: "Nguyên liệu chế tạo linh kiện bán dẫn, vi xử lý máy tính, tấm pin năng lượng mặt trời." },
+        { z: 15, symbol: "P", name: "Phosphorus (Photpho)", mass: 30.974, group: 15, period: 3, category: "nonmetal", config: "[Ne] 3s² 3p³", valency: "III, V", shells: [2, 8, 5], app: "Sản xuất bao diêm, thuốc đầu diêm, thuốc trừ sâu và phân lân nông nghiệp." },
+        { z: 16, symbol: "S", name: "Sulfur (Lưu huỳnh)", mass: 32.06, group: 16, period: 3, category: "nonmetal", config: "[Ne] 3s² 3p⁴", valency: "II, IV, VI", shells: [2, 8, 6], app: "Nguyên liệu sản xuất axit quan trọng bậc nhất H₂SO₄, lưu hóa cao su lốp xe." },
+        { z: 17, symbol: "Cl", name: "Chlorine (Clo)", mass: 35.45, group: 17, period: 3, category: "halogen", config: "[Ne] 3s² 3p⁵", valency: "I, III, V, VII", shells: [2, 8, 7], app: "Xử lý nguồn nước sinh hoạt, nước hồ bơi, chất tẩy rửa diệt trùng PVC." },
+        { z: 18, symbol: "Ar", name: "Argon (Argon)", mass: 39.948, group: 18, period: 3, category: "noble-gas", config: "[Ne] 3s² 3p⁶", valency: "0", shells: [2, 8, 8], app: "Bơm đầy bóng đèn sợi đốt làm chậm sự bay hơi tóc bóng đèn; dùng hàn khí bảo vệ kim loại." }
+    ];
+
+    const categoryNames = {
+        "nonmetal": "Phi kim",
+        "noble-gas": "Khí hiếm",
+        "alkali": "Kim loại kiềm",
+        "alkaline-earth": "Kim loại kiềm thổ",
+        "metalloid": "Á kim",
+        "post-transition": "Kim loại yếu",
+        "halogen": "Halogen"
+    };
+
+    // Khởi tạo các trạng thái từ LocalStorage
+    let reviewedElements = JSON.parse(localStorage.getItem('reviewed_elements')) || [];
+    let currentSelectedZ = null;
+
+    // Hiển thị giao diện khi mở trang
+    window.onload = function() {
+        renderTable();
+        updateProgress();
+    };
+
+    // Hàm sắp xếp và vẽ các ô nguyên tố lên màn hình
+    function renderTable() {
+        const grid = document.getElementById('periodic-grid');
+        grid.innerHTML = '';
+
+        // Tạo bản đồ vị trí theo tọa độ thực tế trên bảng tuần hoàn
+        // H: Group 1, He: Group 18...
+        elementsData.forEach(elem => {
+            const card = document.createElement('div');
+            card.className = `element-card ${reviewedElements.includes(elem.z) ? 'reviewed' : ''}`;
+            
+            // Định cấu hình Grid cột và dòng dựa trên Group & Period hóa học
+            card.style.gridColumn = elem.group;
+            card.style.gridRow = elem.period;
+            
+            // Gắn màu sắc tương ứng với nhóm chất
+            card.style.borderColor = `var(--color-${elem.category})`;
+            card.style.boxShadow = `0 1px 4px -1px var(--color-${elem.category})`;
+
+            // Thêm màu nền nhạt tương ứng với danh mục hóa học
+            card.style.background = `radial-gradient(circle at center, var(--bg-secondary) 50%, rgba(255,255,255,0.02) 100%)`;
+
+            card.innerHTML = `
+                <div class="card-header">
+                    <span class="atomic-number">${elem.z}</span>
+                    <span class="check-badge">✓</span>
+                </div>
+                <div class="symbol" style="color: var(--color-${elem.category});">${elem.symbol}</div>
+                <div class="element-name">${elem.name.split(' ')[0]}</div>
+            `;
+
+            card.addEventListener('click', () => openModal(elem.z));
+            grid.appendChild(card);
+        });
+    }
+
+    // Tính toán tiến độ học tập và đồng bộ thanh tiến trình
+    function updateProgress() {
+        const total = elementsData.length;
+        const reviewedCount = reviewedElements.length;
+        const percentage = Math.round((reviewedCount / total) * 100);
+        
+        document.getElementById('progress-text').innerText = `Tiến độ: ${reviewedCount}/${total} nguyên tố đã học (${percentage}%)`;
+        document.getElementById('progress-fill').style.width = `${percentage}%`;
+    }
+
+    // Mở hộp thoại thông tin chi tiết
+    function openModal(z) {
+        const elem = elementsData.find(e => e.z === z);
+        if (!elem) return;
+
+        currentSelectedZ = z;
+
+        // Điền dữ liệu vào Modal
+        const badge = document.getElementById('modal-badge');
+        badge.innerText = elem.symbol;
+        badge.style.backgroundColor = `var(--color-${elem.category})`;
+
+        document.getElementById('modal-name').innerText = elem.name;
+        document.getElementById('modal-category').innerText = categoryNames[elem.category] || elem.category;
+        document.getElementById('modal-z').innerText = elem.z;
+        document.getElementById('modal-mass').innerText = elem.mass;
+        document.getElementById('modal-config').innerHTML = formatConfiguration(elem.config);
+        document.getElementById('modal-valency').innerText = elem.valency;
+        document.getElementById('modal-app').innerText = elem.app;
+
+        // Vẽ sơ đồ electron động
+        const svgWrapper = document.getElementById('electron-svg-wrapper');
+        svgWrapper.innerHTML = generateElectronSVG(elem.shells, elem.symbol, elem.category);
+
+        // Thiết lập trạng thái nút Ôn tập
+        const btnToggle = document.getElementById('btn-toggle-review');
+        if (reviewedElements.includes(z)) {
+            btnToggle.innerText = 'Bỏ đánh dấu đã học';
+            btnToggle.className = 'btn btn-secondary';
+        } else {
+            btnToggle.innerText = 'Đánh dấu đã ôn tập ✓';
+            btnToggle.className = 'btn btn-success';
+        }
+
+        // Hiện modal
+        document.getElementById('modal').classList.add('active');
+    }
+
+    // Đóng hộp thoại
+    function closeModal() {
+        document.getElementById('modal').classList.remove('active');
+        currentSelectedZ = null;
+    }
+
+    // Đóng modal khi bấm vào vùng nền đen
+    document.getElementById('modal').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+    });
+
+    // Định dạng cấu hình electron (ví dụ: chuyển 1s2 thành số mũ siêu việt 1s²)
+    function formatConfiguration(configStr) {
+        return configStr
+            .replace(/s1/g, 's¹').replace(/s2/g, 's²')
+            .replace(/p1/g, 'p¹').replace(/p2/g, 'p²').replace(/p3/g, 'p³').replace(/p4/g, 'p⁴').replace(/p5/g, 'p⁵').replace(/p6/g, 'p⁶')
+            .replace(/d1/g, 'd¹').replace(/d2/g, 'd²').replace(/d3/g, 'd³').replace(/d4/g, 'd⁴').replace(/d5/g, 'd⁵').replace(/d6/g, 'd⁶');
+    }
+
+    // Vẽ sơ đồ nguyên tử qua SVG với hiệu ứng chuyển động xoay độc lập
+    function generateElectronSVG(shells, symbol, category) {
+        const size = 240;
+        const center = size / 2;
+        let svg = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">`;
+
+        // Vẽ hạt nhân nguyên tử ở tâm
+        const colorHex = `var(--color-${category})`;
+        svg += `<circle cx="${center}" cy="${center}" r="18" fill="var(--bg-secondary)" stroke="${colorHex}" stroke-width="2.5" />`;
+        svg += `<text x="${center}" y="${center + 5}" font-family="system-ui" font-size="12" font-weight="800" fill="var(--text-main)" text-anchor="middle">${symbol}</text>`;
+
+        // Duyệt qua từng lớp electron và vẽ vòng tròn quỹ đạo
+        shells.forEach((electrons, index) => {
+            const radius = 35 + (index * 25);
+            const isEven = index % 2 === 0;
+            const animationClass = isEven ? 'rotate-cw' : 'rotate-ccw'; // Các lớp quay ngược chiều nhau tạo cảm giác sống động
+
+            // Vẽ đường rãnh quỹ đạo (đứt nét)
+            svg += `<circle cx="${center}" cy="${center}" r="${radius}" stroke="var(--bg-card)" stroke-width="1" stroke-dasharray="3 3" fill="none" />`;
+
+            // Vẽ các hạt electron nhỏ quay xung quanh quỹ đạo
+            svg += `<g class="shell-layer ${animationClass}">`;
+            for (let i = 0; i < electrons; i++) {
+                const angle = (i * 2 * Math.PI) / electrons;
+                const ex = center + radius * Math.cos(angle);
+                const ey = center + radius * Math.sin(angle);
+                svg += `<circle cx="${ex}" cy="${ey}" r="4" fill="${colorHex}" />`;
+            }
+            svg += `</g>`;
+        });
+
+        svg += `</svg>`;
+        return svg;
+    }
+
+    // Xử lý sự kiện Thay đổi trạng thái ôn tập
+    function handleToggleReview() {
+        if (currentSelectedZ === null) return;
+
+        const index = reviewedElements.indexOf(currentSelectedZ);
+        if (index > -1) {
+            // Hủy trạng thái ôn tập
+            reviewedElements.splice(index, 1);
+        } else {
+            // Đánh dấu đã học
+            reviewedElements.push(currentSelectedZ);
+        }
+
+        // Đồng bộ lên bộ nhớ trình duyệt LocalStorage
+        localStorage.setItem('reviewed_elements', JSON.stringify(reviewedElements));
+
+        // Cập nhật giao diện bên ngoài
+        renderTable();
+        updateProgress();
+        closeModal();
+    }
+</script>
+</body>
+</html>
